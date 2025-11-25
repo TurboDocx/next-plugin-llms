@@ -345,6 +345,13 @@ export async function writeGeneratedFiles(
     }
   }
 
+  // Generate per-page markdown files
+  if (options.generatePerPageMarkdown) {
+    const { generatePerPageRoutes } = await import('./per-page-generator');
+    const perPageFiles = await generatePerPageRoutes(routes, options);
+    generatedFiles.push(...perPageFiles);
+  }
+
   return generatedFiles;
 }
 

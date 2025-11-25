@@ -170,6 +170,7 @@ export async function generateLLMFiles(options: PluginOptions = defaultOptions) 
 // Export types
 export type {
   PluginOptions,
+  PerPageOptions,
   ContentSource,
   CustomSection,
   CustomLLMFile,

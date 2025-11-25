@@ -27,6 +27,17 @@ export interface PluginOptions {
   generateLLMsFullTxt?: boolean;
 
   /**
+   * Generate per-page markdown endpoints (.html.md)
+   * @default false
+   */
+  generatePerPageMarkdown?: boolean;
+
+  /**
+   * Per-page markdown generation options
+   */
+  perPageOptions?: PerPageOptions;
+
+  /**
    * Site title (fallback to Next.js metadata)
    */
   title?: string;
@@ -168,6 +179,35 @@ export interface CustomSectionItem {
 }
 
 /**
+ * Per-page markdown generation options
+ */
+export interface PerPageOptions {
+  /**
+   * Output as route handlers or static files
+   * @default 'route-handler'
+   */
+  outputType?: 'route-handler' | 'static';
+
+  /**
+   * Include page metadata in markdown frontmatter
+   * @default true
+   */
+  includeMetadata?: boolean;
+
+  /**
+   * Patterns for pages to include
+   * If not specified, all pages are included
+   */
+  includePatterns?: string[];
+
+  /**
+   * Patterns for pages to exclude
+   * Applied in addition to global excludePatterns
+   */
+  excludePatterns?: string[];
+}
+
+/**
  * Content processing options
  */
 export interface ContentOptions {
@@ -251,7 +291,7 @@ export interface GeneratedFile {
   /**
    * File type
    */
-  type: 'llms.txt' | 'llms-full.txt' | 'custom';
+  type: 'llms.txt' | 'llms-full.txt' | 'per-page' | 'custom';
 
   /**
    * File size in bytes
