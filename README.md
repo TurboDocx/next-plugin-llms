@@ -5,6 +5,7 @@ A Next.js plugin for automatically generating LLM-friendly documentation followi
 ## Features
 
 - ⚡️ **Automatic Generation** - Scans your Next.js app directory and generates `llms.txt` and `llms-full.txt` files
+- 📄 **Per-Page Endpoints** - Generate `.html.md` endpoints for each page (e.g., `/products.html.md`)
 - 🎯 **Zero Config** - Works out of the box with sensible defaults
 - 🔧 **Highly Customizable** - Fine-tune content sources, sections, and output format
 - 📝 **Content Extraction** - Intelligently extracts readable text from React/TSX components
@@ -12,6 +13,7 @@ A Next.js plugin for automatically generating LLM-friendly documentation followi
 - 📊 **Section Grouping** - Organize content by products, use cases, blog posts, etc.
 - 🎨 **Custom Sections** - Add external links, open source projects, and more
 - 📦 **Multiple Output Modes** - Generate as route handlers or static files
+- 🔀 **Dynamic Routes** - Supports `[id]` and `[...slug]` catch-all routes
 
 ## Installation
 
@@ -130,6 +132,61 @@ export default withLLMsTxt({
 | `description` | `string` | - | Site description |
 | `siteUrl` | `string` | - | Base URL of your site |
 | `appDir` | `string` | `'app'` | Path to app directory |
+| `generatePerPageMarkdown` | `boolean` | `false` | Generate per-page `.html.md` endpoints |
+| `perPageOptions` | `PerPageOptions` | - | Per-page generation options |
+
+### Per-Page Markdown Endpoints
+
+Generate individual `.html.md` route handlers for each page, allowing LLMs to fetch specific page content:
+
+```typescript
+{
+  generatePerPageMarkdown: true,
+  perPageOptions: {
+    outputType: 'route-handler',     // 'route-handler' or 'static'
+    includeMetadata: true,            // Include frontmatter metadata
+    includePatterns: ['products/**', 'blog/**'],  // Only generate for these pages
+    excludePatterns: ['**/admin/**']  // Exclude these pages
+  }
+}
+```
+
+**Generated Output:**
+```
+app/
+├── products.html.md/
+│   └── route.ts         → Serves markdown for /products
+├── products/
+│   └── shoes.html.md/
+│       └── route.ts     → Serves markdown for /products/shoes
+└── blog/
+    └── [slug].html.md/
+        └── route.ts     → Serves markdown for /blog/:slug
+```
+
+**Markdown Format:**
+```markdown
+---
+title: Products
+description: Our product catalog
+url: https://example.com/products
+---
+
+# Products
+
+> Our product catalog
+
+Main page content here...
+```
+
+**PerPageOptions:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `outputType` | `'route-handler' \| 'static'` | `'route-handler'` | Generate route handlers or static files |
+| `includeMetadata` | `boolean` | `true` | Include frontmatter with metadata |
+| `includePatterns` | `string[]` | `[]` | Only generate for matching pages |
+| `excludePatterns` | `string[]` | `[]` | Exclude matching pages |
 
 ### Content Discovery
 
