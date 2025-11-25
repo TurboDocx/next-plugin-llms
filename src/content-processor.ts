@@ -20,13 +20,13 @@ export async function extractPageContent(
   }
 
   const content = fs.readFileSync(routeInfo.filePath, 'utf-8');
-  return processContent(content, options);
+  return processContent(content, routeInfo.filePath, options);
 }
 
 /**
  * Process TSX content to extract readable text
  */
-function processContent(content: string, options: ContentOptions): string {
+function processContent(content: string, filePath: string, options: ContentOptions): string {
   const {
     stripJsx = true,
     preserveMarkdown = true,
@@ -84,7 +84,7 @@ function processContent(content: string, options: ContentOptions): string {
 
     return processedContent;
   } catch (error) {
-    console.warn(`Failed to parse content for ${routeInfo.filePath}:`, error);
+    console.warn(`Failed to parse content for ${filePath}:`, error);
     return fallbackContentExtraction(content, options);
   }
 }
