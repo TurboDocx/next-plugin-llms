@@ -28,7 +28,7 @@ export interface PluginOptions {
 
   /**
    * Generate per-page markdown endpoints (.html.md)
-   * @default false
+   * @default true
    */
   generatePerPageMarkdown?: boolean;
 

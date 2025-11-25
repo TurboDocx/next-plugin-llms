@@ -17,6 +17,7 @@ const defaultOptions: PluginOptions = {
   enabled: true,
   generateLLMsTxt: true,
   generateLLMsFullTxt: true,
+  generatePerPageMarkdown: true,
   appDir: 'app',
   includePatterns: ['**/*.tsx', '**/*.ts'],
   excludePatterns: ['**/api/**', '**/_*.tsx', '**/route.ts'],
@@ -27,6 +28,10 @@ const defaultOptions: PluginOptions = {
     includeMetadata: true,
     maxContentLength: 50000,
     removeDuplicateHeadings: false,
+  },
+  perPageOptions: {
+    outputType: 'route-handler',
+    includeMetadata: true,
   },
 };
 

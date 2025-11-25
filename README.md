@@ -39,7 +39,9 @@ That's it! The plugin will automatically:
 - Scan your `app/` directory
 - Extract metadata from `layout.tsx` files
 - Extract content from `page.tsx` files
-- Generate `app/llms.txt/route.ts` and `app/llms-full.txt/route.ts`
+- Generate `app/llms.txt/route.ts` (directory/index)
+- Generate `app/llms-full.txt/route.ts` (all content combined)
+- Generate `app/**/*.html.md/route.ts` (per-page endpoints)
 
 ### Advanced Configuration
 
@@ -132,12 +134,12 @@ export default withLLMsTxt({
 | `description` | `string` | - | Site description |
 | `siteUrl` | `string` | - | Base URL of your site |
 | `appDir` | `string` | `'app'` | Path to app directory |
-| `generatePerPageMarkdown` | `boolean` | `false` | Generate per-page `.html.md` endpoints |
+| `generatePerPageMarkdown` | `boolean` | `true` | Generate per-page `.html.md` endpoints |
 | `perPageOptions` | `PerPageOptions` | - | Per-page generation options |
 
 ### Per-Page Markdown Endpoints
 
-Generate individual `.html.md` route handlers for each page, allowing LLMs to fetch specific page content:
+**Enabled by default!** Individual `.html.md` route handlers are generated for each page, allowing LLMs to fetch specific page content efficiently:
 
 ```typescript
 {
