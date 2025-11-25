@@ -85,7 +85,8 @@ function shouldExclude(relativePath: string, excludePatterns: string[]): boolean
   // Default exclusions
   const defaultExclusions = [
     '**/api/**',
-    '**/_*.tsx',
+    '**/_*/**',     // Exclude directories starting with underscore
+    '**/_*.tsx',    // Exclude files starting with underscore
     '**/_*.ts',
     '**/route.ts',
     '**/.*',
@@ -129,17 +130,20 @@ function createRouteInfo(
  * - Catch-all: [...slug] becomes *
  */
 export function filePathToUrlPath(filePath: string): string {
-  // Normalize path separators
-  let urlPath = filePath.split(path.sep).join('/');
+  // Normalize path separators (handle both forward and backslash)
+  let urlPath = filePath.replace(/\\/g, '/');
 
   // Remove route groups (anything in parentheses)
-  urlPath = urlPath.replace(/\([^)]+\)\//g, '');
+  urlPath = urlPath.replace(/\([^)]+\)\/?/g, '');
+
+  // Convert optional catch-all routes [[...slug]] to :slug (do this FIRST)
+  urlPath = urlPath.replace(/\[\[\.\.\.([\w]+)\]\]/g, ':$1');
+
+  // Convert catch-all routes [...slug] to * (do this BEFORE converting regular dynamic routes)
+  urlPath = urlPath.replace(/\[\.\.\.([\w]+)\]/g, '*');
 
   // Convert dynamic routes [id] to :id (for display purposes)
   urlPath = urlPath.replace(/\[([^\]]+)\]/g, ':$1');
-
-  // Convert catch-all routes [...slug] to *
-  urlPath = urlPath.replace(/\[\.\.\.([\w]+)\]/g, '*');
 
   // Ensure starts with /
   if (!urlPath.startsWith('/')) {
@@ -179,8 +183,12 @@ export function groupRoutesBySection(
 
     if (options.sources) {
       for (const source of options.sources) {
-        const relativePath = route.filePath.replace(process.cwd(), '');
-        if (minimatch(relativePath, source.pattern)) {
+        // Normalize the file path to be relative and check against pattern
+        let relativePath = route.filePath.replace(process.cwd(), '').replace(/^\//,'');
+
+        // Try matching with **/pattern for flexibility
+        if (minimatch(relativePath, source.pattern) ||
+            minimatch(relativePath, `**/${source.pattern}`)) {
           sections.get(source.section)?.push(route);
           assigned = true;
           break;
@@ -224,13 +232,17 @@ export function sortRoutesByPriority(
 
     if (options.sources) {
       for (const source of options.sources) {
-        const aRelPath = a.filePath.replace(process.cwd(), '');
-        const bRelPath = b.filePath.replace(process.cwd(), '');
+        // Normalize the file paths to be relative
+        const aRelPath = a.filePath.replace(process.cwd(), '').replace(/^\//,'');
+        const bRelPath = b.filePath.replace(process.cwd(), '').replace(/^\//,'');
 
-        if (minimatch(aRelPath, source.pattern)) {
+        // Try matching with **/pattern for flexibility
+        if (minimatch(aRelPath, source.pattern) ||
+            minimatch(aRelPath, `**/${source.pattern}`)) {
           aPriority = priorityMap[source.priority || 'medium'];
         }
-        if (minimatch(bRelPath, source.pattern)) {
+        if (minimatch(bRelPath, source.pattern) ||
+            minimatch(bRelPath, `**/${source.pattern}`)) {
           bPriority = priorityMap[source.priority || 'medium'];
         }
       }
