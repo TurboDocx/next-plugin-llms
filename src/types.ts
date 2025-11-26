@@ -2,7 +2,27 @@
  * TypeScript type definitions for next-plugin-llms
  */
 
-import type { NextConfig } from 'next';
+/**
+ * Minimal Next.js config type to avoid version conflicts
+ */
+export interface NextConfig {
+  webpack?: ((config: unknown, context: WebpackConfigContext) => unknown) | null;
+  [key: string]: unknown;
+}
+
+/**
+ * Webpack config context type
+ */
+export interface WebpackConfigContext {
+  isServer: boolean;
+  dev: boolean;
+  buildId: string;
+  dir: string;
+  config: Record<string, unknown>;
+  defaultLoaders: unknown;
+  totalPages: number;
+  webpack: unknown;
+}
 
 /**
  * Plugin configuration options
@@ -36,6 +56,13 @@ export interface PluginOptions {
    * Per-page markdown generation options
    */
   perPageOptions?: PerPageOptions;
+
+  /**
+   * Skip generation in development mode (improves dev server performance)
+   * Files will only be generated during production builds
+   * @default false
+   */
+  skipInDevelopment?: boolean;
 
   /**
    * Site title (fallback to Next.js metadata)

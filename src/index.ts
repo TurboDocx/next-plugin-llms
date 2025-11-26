@@ -3,8 +3,7 @@
  * Next.js plugin for generating LLM-friendly documentation
  */
 
-import type { NextConfig } from 'next';
-import type { PluginOptions, WithLLMsTxt } from './types';
+import type { NextConfig, WebpackConfigContext, PluginOptions, WithLLMsTxt } from './types';
 import { scanAppDirectory, sortRoutesByPriority } from './scanner';
 import { enrichRoutesWithMetadata } from './metadata-extractor';
 import { enrichRoutesWithContent } from './content-processor';
@@ -42,7 +41,7 @@ const defaultOptions: PluginOptions = {
 export const withLLMsTxt: WithLLMsTxt = (
   nextConfig: NextConfig = {},
   options: PluginOptions = {}
-) => {
+): NextConfig => {
   const mergedOptions: PluginOptions = {
     ...defaultOptions,
     ...options,
@@ -62,7 +61,7 @@ export const withLLMsTxt: WithLLMsTxt = (
 
   return {
     ...nextConfig,
-    webpack(config, context) {
+    webpack(config: unknown, context: WebpackConfigContext) {
       // Call original webpack config if it exists
       if (originalWebpack) {
         config = originalWebpack(config, context);
@@ -71,8 +70,9 @@ export const withLLMsTxt: WithLLMsTxt = (
       // Only run on server build
       if (context.isServer) {
         // Add plugin to generate LLM files
-        config.plugins = config.plugins || [];
-        config.plugins.push(new LLMsTxtWebpackPlugin(mergedOptions));
+        const webpackConfig = config as { plugins?: unknown[] };
+        webpackConfig.plugins = webpackConfig.plugins || [];
+        webpackConfig.plugins.push(new LLMsTxtWebpackPlugin(mergedOptions));
       }
 
       return config;
@@ -92,11 +92,23 @@ class LLMsTxtWebpackPlugin {
   }
 
   apply(compiler: any) {
+    const isProduction = compiler.options.mode === 'production';
+    const isDevelopment = compiler.options.mode === 'development';
+
     compiler.hooks.beforeCompile.tapAsync(
       'LLMsTxtWebpackPlugin',
       async (_: any, callback: () => void) => {
-        // Only run once
+        // In production: Always generate (but only once per build)
+        // In development: Only generate on first run
         if (this.hasRun) {
+          callback();
+          return;
+        }
+
+        // Skip in dev mode if user wants to (performance optimization)
+        if (isDevelopment && this.options.skipInDevelopment) {
+          console.log('⏭️  Skipping LLM file generation in development mode (skipInDevelopment: true)');
+          this.hasRun = true;
           callback();
           return;
         }

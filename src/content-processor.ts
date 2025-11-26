@@ -24,6 +24,32 @@ export async function extractPageContent(
 }
 
 /**
+ * Check if a string looks like CSS classes (Tailwind, etc.)
+ */
+function isCSSClassString(str: string): boolean {
+  if (!str || str.trim().length === 0) {
+    return false;
+  }
+
+  // Common CSS class patterns
+  const cssPatterns = [
+    /^[\w-]+(\s+[\w-]+)*$/,  // Multiple space-separated class names
+    /^(text|bg|border|flex|grid|p|m|w|h|gap|space|rounded|shadow|opacity|font|leading|tracking)-/,  // Tailwind prefixes
+    /^(sm:|md:|lg:|xl:|2xl:)/,  // Tailwind breakpoints
+    /^(hover:|focus:|active:|group-hover:)/,  // Tailwind states
+  ];
+
+  // If it contains 3+ space-separated words that look like CSS classes
+  const words = str.trim().split(/\s+/);
+  if (words.length >= 3 && words.every(w => /^[\w-]+$/.test(w))) {
+    return true;
+  }
+
+  // Check against CSS patterns
+  return cssPatterns.some(pattern => pattern.test(str.trim()));
+}
+
+/**
  * Process TSX content to extract readable text
  */
 function processContent(content: string, filePath: string, options: ContentOptions): string {
@@ -44,18 +70,45 @@ function processContent(content: string, filePath: string, options: ContentOptio
 
     // Traverse AST to extract text content
     traverse(ast, {
-      // Extract string literals
+      // Extract string literals (but skip JSX attribute values)
       StringLiteral(path) {
+        // Skip if this is a JSX attribute value
+        const parent = path.parent;
+        if (parent && parent.type === 'JSXAttribute') {
+          return;
+        }
+
+        // Skip if this looks like a CSS class string (common patterns)
         const value = path.node.value;
+        if (isCSSClassString(value)) {
+          return;
+        }
+
+        // Skip import/export strings
+        if (parent && (parent.type === 'ImportDeclaration' || parent.type === 'ExportNamedDeclaration')) {
+          return;
+        }
+
         if (value && value.trim().length > 0) {
           extractedText.push(value.trim());
         }
       },
 
-      // Extract template literals
+      // Extract template literals (but skip JSX attribute values)
       TemplateLiteral(path) {
+        // Skip if this is a JSX attribute value
+        const parent = path.parent;
+        if (parent && parent.type === 'JSXAttribute') {
+          return;
+        }
+
         const quasis = path.node.quasis.map((q) => q.value.cooked || '');
         const combined = quasis.join(' ');
+
+        if (isCSSClassString(combined)) {
+          return;
+        }
+
         if (combined.trim().length > 0) {
           extractedText.push(combined.trim());
         }
@@ -107,6 +160,7 @@ function fallbackContentExtraction(content: string, options: ContentOptions): st
   const extractedText = strings
     .map((s) => s.slice(1, -1))
     .filter((s) => s.trim().length > 0)
+    .filter((s) => !isCSSClassString(s))  // Filter out CSS classes
     .join('\n\n');
 
   if (extractedText.length > maxContentLength) {

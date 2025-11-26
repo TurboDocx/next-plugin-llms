@@ -33,9 +33,6 @@
     "lib",
     "src"
   ],
-  "peerDependencies": {
-    "next": ">=14.0.0"
-  },
   "dependencies": {
     "@babel/parser": "^7.26.2",
     "@babel/traverse": "^7.26.4",
