@@ -422,29 +422,19 @@ Contributions welcome! Please open an issue or PR.
 
 Discover our suite of open-source tools and integrations for document automation:
 
-### Developer Tools
-- **[@turbodocx/html-to-docx](https://github.com/TurboDocx/html-to-docx)** - Convert HTML to DOCX with comprehensive formatting support
-  - 📦 26,000+ npm downloads
-  - ⚡️ High-performance conversion engine
-  - 🎨 Full CSS styling support
-  - 🖼️ Advanced image handling with SVG support
+| Package | Description | Downloads |
+|---------|-------------|-----------|
+| **[@turbodocx/html-to-docx](https://github.com/TurboDocx/html-to-docx)** | Convert HTML to DOCX with comprehensive formatting support, SVG handling, and full CSS styling | [![npm](https://img.shields.io/npm/dm/@turbodocx/html-to-docx.svg)](https://www.npmjs.com/package/@turbodocx/html-to-docx) |
+| **[@turbodocx/next-plugin-llms](https://github.com/TurboDocx/next-plugin-llms)** | Next.js plugin for generating LLM-friendly documentation (llms.txt) | [![npm](https://img.shields.io/npm/dm/@turbodocx/next-plugin-llms.svg)](https://www.npmjs.com/package/@turbodocx/next-plugin-llms) |
+| **[n8n-nodes-turbodocx](https://www.npmjs.com/package/@turbodocx/n8n-nodes-turbodocx)** | TurboDocx node for n8n workflow automation - connect with 400+ apps | [![npm](https://img.shields.io/npm/dm/@turbodocx/n8n-nodes-turbodocx.svg)](https://www.npmjs.com/package/@turbodocx/n8n-nodes-turbodocx) |
 
-### Integrations & Automation
-- **[n8n-nodes-turbodocx](https://www.npmjs.com/package/@turbodocx/n8n-nodes-turbodocx)** - TurboDocx node for n8n workflow automation
-  - 🔗 Connect with 400+ apps
-  - 🤖 Automate document generation workflows
-  - 📊 Data-driven document creation
+### 🚀 Platform & Resources
 
-### Platform
-- **[TurboDocx Platform](https://www.turbodocx.com)** - Enterprise document automation
-  - 🚀 AI-powered templating
-  - ✍️ Digital signatures (TurboSign)
-  - 🔌 Salesforce, Wrike, ConnectWise integrations
-  - 📖 [API Documentation](https://docs.turbodocx.com)
-
-### All Projects
-- **[GitHub Organization](https://github.com/TurboDocx)** - Browse all open-source projects
-- **[npm Packages](https://www.npmjs.com/~turbodocx)** - Published packages on npm
+- **[TurboDocx Platform](https://www.turbodocx.com)** - Enterprise document automation with AI-powered templating
+- **[TurboSign](https://www.turbodocx.com/products/turbosign)** - Digital signatures at 50% lower cost
+- **[API Documentation](https://docs.turbodocx.com)** - Complete REST API reference
+- **[GitHub Organization](https://github.com/TurboDocx)** - All open-source projects
+- **[npm Packages](https://www.npmjs.com/~turbodocx)** - Published packages
 
 ## License
 
