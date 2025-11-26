@@ -3,6 +3,7 @@
 # @turbodocx/next-plugin-llms
 
 [![NPM Version](https://img.shields.io/npm/v/@turbodocx/next-plugin-llms.svg)](https://www.npmjs.com/package/@turbodocx/next-plugin-llms)
+[![CodeQL](https://github.com/TurboDocx/next-plugin-llms/workflows/CodeQL/badge.svg)](https://github.com/TurboDocx/next-plugin-llms/actions/workflows/codeql.yml)
 [![GitHub Stars](https://img.shields.io/github/stars/turbodocx/next-plugin-llms?style=social)](https://github.com/turbodocx/next-plugin-llms)
 [![TypeScript](https://shields.io/badge/TypeScript-3178C6?logo=TypeScript&logoColor=FFF&style=flat-square)](https://typescript.org)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Us-7289DA?logo=discord)](https://discord.gg/NYKwz4BcpX)
