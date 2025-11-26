@@ -431,7 +431,7 @@ Discover our suite of open-source tools and integrations for document automation
 ### 🚀 Platform & Resources
 
 - **[TurboDocx Platform](https://www.turbodocx.com)** - Enterprise document automation with AI-powered templating
-- **[TurboSign](https://www.turbodocx.com/products/turbosign)** - Digital signatures at 50% lower cost
+- **[TurboSign](https://www.turbodocx.com/products/turbosign)** - Free E-Signature
 - **[API Documentation](https://docs.turbodocx.com)** - Complete REST API reference
 - **[GitHub Organization](https://github.com/TurboDocx)** - All open-source projects
 - **[npm Packages](https://www.npmjs.com/~turbodocx)** - Published packages
