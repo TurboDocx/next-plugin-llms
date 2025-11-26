@@ -1,6 +1,13 @@
-![TurboDocx Banner](./banner.png)
+[![TurboDocx](./banner.png)](https://www.turbodocx.com)
 
 # @turbodocx/next-plugin-llms
+
+[![NPM Version](https://img.shields.io/npm/v/@turbodocx/next-plugin-llms.svg)](https://www.npmjs.com/package/@turbodocx/next-plugin-llms)
+[![GitHub Stars](https://img.shields.io/github/stars/turbodocx/next-plugin-llms?style=social)](https://github.com/turbodocx/next-plugin-llms)
+[![TypeScript](https://shields.io/badge/TypeScript-3178C6?logo=TypeScript&logoColor=FFF&style=flat-square)](https://typescript.org)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Us-7289DA?logo=discord)](https://discord.gg/NYKwz4BcpX)
+[![npm](https://img.shields.io/npm/dm/@turbodocx/next-plugin-llms)](https://www.npmjs.com/package/@turbodocx/next-plugin-llms)
+[![X](https://img.shields.io/badge/X-@TurboDocx-1DA1F2?logo=x&logoColor=white)](https://twitter.com/TurboDocx)
 
 A Next.js plugin for automatically generating LLM-friendly documentation following the [llmstxt.org](https://llmstxt.org/) standard.
 
