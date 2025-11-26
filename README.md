@@ -1,3 +1,5 @@
+![TurboDocx Banner](./banner.png)
+
 # @turbodocx/next-plugin-llms
 
 A Next.js plugin for automatically generating LLM-friendly documentation following the [llmstxt.org](https://llmstxt.org/) standard.
