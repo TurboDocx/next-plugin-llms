@@ -1,0 +1,51 @@
+# This workflow publishes the package to npm when a GitHub release is created
+# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
+
+name: TurboDocx Next.js LLM Plugin - NPM Release
+
+on:
+  release:
+    types: [created]  # Trigger when a new release is published on GitHub
+
+jobs:
+  # Build and test the package before publishing
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Install dependencies with clean install (respects package-lock.json exactly)
+      - run: npm ci
+
+      # Build the TypeScript code
+      - run: npm run build
+
+      # Run tests to validate the package
+      - run: npm test
+
+  # Publish the package to npm registry (only runs if build job passes)
+  publish-npm:
+    needs: build  # Wait for build and tests to pass before publishing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+
+      # Install dependencies
+      - run: npm ci
+
+      # Build the production bundle
+      - run: npm run build
+
+      # Publish to npm with public access
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
