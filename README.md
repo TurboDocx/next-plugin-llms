@@ -418,6 +418,34 @@ See the [examples](./examples) directory for complete usage examples.
 
 Contributions welcome! Please open an issue or PR.
 
+## Explore the TurboDocx Ecosystem
+
+Discover our suite of open-source tools and integrations for document automation:
+
+### Developer Tools
+- **[@turbodocx/html-to-docx](https://github.com/TurboDocx/html-to-docx)** - Convert HTML to DOCX with comprehensive formatting support
+  - 📦 26,000+ npm downloads
+  - ⚡️ High-performance conversion engine
+  - 🎨 Full CSS styling support
+  - 🖼️ Advanced image handling with SVG support
+
+### Integrations & Automation
+- **[n8n-nodes-turbodocx](https://www.npmjs.com/package/@turbodocx/n8n-nodes-turbodocx)** - TurboDocx node for n8n workflow automation
+  - 🔗 Connect with 400+ apps
+  - 🤖 Automate document generation workflows
+  - 📊 Data-driven document creation
+
+### Platform
+- **[TurboDocx Platform](https://www.turbodocx.com)** - Enterprise document automation
+  - 🚀 AI-powered templating
+  - ✍️ Digital signatures (TurboSign)
+  - 🔌 Salesforce, Wrike, ConnectWise integrations
+  - 📖 [API Documentation](https://docs.turbodocx.com)
+
+### All Projects
+- **[GitHub Organization](https://github.com/TurboDocx)** - Browse all open-source projects
+- **[npm Packages](https://www.npmjs.com/~turbodocx)** - Published packages on npm
+
 ## License
 
 MIT
@@ -428,6 +456,8 @@ MIT
 - [vitepress-plugin-llms](https://github.com/okineadev/vitepress-plugin-llms) - LLM plugin for VitePress
 - [llmstxt.org](https://llmstxt.org/) - Official llms.txt specification
 
-## Credits
+## Support
 
-Built by [TurboDocx](https://www.turbodocx.com) - AI-powered document automation.
+**Proudly Built by TurboDocx**
+
+[![TurboDocx](https://image.typedream.com/cdn-cgi/image/width=1920,format=auto,fit=scale-down,quality=100/https://api.typedream.com/v0/document/public/de39171b-a5c9-49c5-bd9c-c2dfd5d632a2/2PZxyx12UwC5HrIA3p6lo16fCms_Group_16_1_.png)](https://www.turbodocx.com)
