@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { vol } from 'memfs';
 import {
   extractPageContent,
@@ -175,6 +175,117 @@ describe('Content Processor', () => {
       expect(content).toContain('Home');
       expect(content).toContain('Featured Product');
       expect(content).toContain('TurboDocx is amazing');
+    });
+
+    // ──────────────────────────────────────────────────────────────────
+    // Regression: content extractor previously leaked CSS values from
+    // inline style={{}} props and mis-classified plain prose as CSS.
+    // ──────────────────────────────────────────────────────────────────
+    describe('CSS value handling', () => {
+      it('should NOT extract CSS values from inline style objects', async () => {
+        vol.fromJSON({
+          '/app/page.tsx': `
+            export default function Page() {
+              return (
+                <div style={{
+                  fontFamily: "'Spectral', Georgia, serif",
+                  color: "var(--accent)",
+                  background: "rgba(15,12,8,0.45)",
+                  fontSize: "clamp(56px, 9vw, 144px)",
+                  border: "1px solid var(--rule)",
+                  padding: "0.18em",
+                }}>
+                  <p>Real prose content</p>
+                </div>
+              );
+            }
+          `,
+        });
+
+        const content = await extractPageContent({
+          filePath: '/app/page.tsx',
+          urlPath: '/',
+          type: 'page',
+        });
+
+        expect(content).toContain('Real prose content');
+        // None of these CSS-y values should leak into the output:
+        expect(content).not.toContain('var(--accent)');
+        expect(content).not.toContain('rgba(15,12,8,0.45)');
+        expect(content).not.toContain('1px solid var(--rule)');
+        expect(content).not.toContain('clamp(56px, 9vw, 144px)');
+        expect(content).not.toContain("'Spectral', Georgia, serif");
+        expect(content).not.toContain('0.18em');
+      });
+
+      it('should NOT extract CSS values held in module-scope constants', async () => {
+        vol.fromJSON({
+          '/app/page.tsx': `
+            const FONTS = {
+              display: "'Fraunces', 'Spectral', Georgia, serif",
+              body: "'Inter', system-ui, sans-serif",
+            };
+            export default function Page() {
+              return <div style={{ fontFamily: FONTS.display }}>Hello</div>;
+            }
+          `,
+        });
+
+        const content = await extractPageContent({
+          filePath: '/app/page.tsx',
+          urlPath: '/',
+          type: 'page',
+        });
+
+        expect(content).toContain('Hello');
+        expect(content).not.toContain('Fraunces');
+        expect(content).not.toContain('system-ui');
+      });
+
+      it('should extract plain multi-word prose that previously got mis-classified as CSS classes', async () => {
+        vol.fromJSON({
+          '/app/page.tsx': `
+            export default function Page() {
+              const greeting = "Hello world from Nicolas";
+              const bio = "Best in class document automation";
+              return <div>{greeting}{bio}</div>;
+            }
+          `,
+        });
+
+        const content = await extractPageContent({
+          filePath: '/app/page.tsx',
+          urlPath: '/',
+          type: 'page',
+        });
+
+        expect(content).toContain('Hello world from Nicolas');
+        expect(content).toContain('Best in class document automation');
+      });
+
+      it('should still filter actual Tailwind class strings on className', async () => {
+        vol.fromJSON({
+          '/app/page.tsx': `
+            export default function Page() {
+              return (
+                <div className="flex items-center justify-between p-4 bg-white text-gray-900">
+                  <h1>Title</h1>
+                </div>
+              );
+            }
+          `,
+        });
+
+        const content = await extractPageContent({
+          filePath: '/app/page.tsx',
+          urlPath: '/',
+          type: 'page',
+        });
+
+        expect(content).toContain('Title');
+        expect(content).not.toContain('flex items-center');
+        expect(content).not.toContain('bg-white');
+      });
     });
   });
 

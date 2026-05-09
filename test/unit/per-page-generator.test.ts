@@ -3,7 +3,7 @@
  * Following TDD approach - these tests are written BEFORE implementation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { vol } from 'memfs';
 import * as fs from 'fs';
 import type { RouteInfo, PluginOptions } from '../../src/types';
@@ -120,7 +120,7 @@ describe('Per-Page Generator', () => {
       expect(result[0].path).toContain('products');
     });
 
-    it('should handle dynamic routes [id]', async () => {
+    it('should expand dynamic routes [id] when entries are provided', async () => {
       const routes: RouteInfo[] = [
         {
           filePath: '/test-app/app/products/[id]/page.tsx',
@@ -132,15 +132,21 @@ describe('Per-Page Generator', () => {
       const options: PluginOptions = {
         appDir: '/test-app/app',
         generatePerPageMarkdown: true,
+        dynamicRoutes: {
+          'products/[id]': [{ params: { id: 'foo' } }],
+        },
       };
 
       const result = await generatePerPageRoutes(routes, options);
 
       expect(result).toHaveLength(1);
-      expect(result[0].path).toContain('[id].html.md');
+      expect(result[0].path).toContain('foo.html.md');
+      // Importantly, the broken `:id` template path is NOT emitted.
+      expect(result[0].path).not.toContain('[id]');
     });
 
-    it('should handle catch-all routes [...slug]', async () => {
+    it('should skip catch-all routes [...slug] (with warning) — full catch-all expansion is not yet supported', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const routes: RouteInfo[] = [
         {
           filePath: '/test-app/app/docs/[...slug]/page.tsx',
@@ -156,8 +162,9 @@ describe('Per-Page Generator', () => {
 
       const result = await generatePerPageRoutes(routes, options);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].path).toContain('[...slug].html.md');
+      expect(result).toHaveLength(0);
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
     });
 
     it('should skip route groups in paths', async () => {
@@ -553,6 +560,165 @@ describe('Per-Page Generator', () => {
 
       expect(path).not.toContain('(marketing)');
       expect(path).toBe('/test-app/app/products.html.md/route.ts');
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────
+  // Dynamic-route expansion via the new dynamicRoutes config option.
+  //
+  // Previously a page at app/notes/[slug]/page.tsx produced a single
+  // /notes/[slug].html.md/route.ts file with `:slug` placeholders in
+  // the body — useless to LLMs and effectively broken. Now callers can
+  // provide entries for the dynamic params and the plugin emits one
+  // literal route per entry (the same pattern dotcom uses for blog
+  // posts that are stored as separate files).
+  // ──────────────────────────────────────────────────────────────────
+  describe('generatePerPageRoutes — dynamic routes', () => {
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    afterEach(() => consoleWarn.mockClear());
+
+    it('should expand a [slug] route into one literal route per entry when dynamicRoutes is provided', async () => {
+      const routes: RouteInfo[] = [
+        {
+          filePath: '/test-app/app/notes/[slug]/page.tsx',
+          urlPath: '/notes/:slug',
+          type: 'page',
+          metadata: { title: 'Note', description: 'A note from Nicolas' },
+          content: 'Template body — ignored when entry.content is supplied.',
+        },
+      ];
+
+      const options: PluginOptions = {
+        appDir: '/test-app/app',
+        generatePerPageMarkdown: true,
+        siteUrl: 'https://nicolasfry.com',
+        dynamicRoutes: {
+          'notes/[slug]': [
+            {
+              params: { slug: 'first-note' },
+              title: 'First Note',
+              description: 'My first essay',
+              content: 'Body of the first note.',
+            },
+            {
+              params: { slug: 'second-note' },
+              title: 'Second Note',
+              description: 'My second essay',
+              content: 'Body of the second note.',
+            },
+          ],
+        },
+      };
+
+      const result = await generatePerPageRoutes(routes, options);
+
+      expect(result).toHaveLength(2);
+      expect(fs.existsSync('/test-app/app/notes/first-note.html.md/route.ts')).toBe(true);
+      expect(fs.existsSync('/test-app/app/notes/second-note.html.md/route.ts')).toBe(true);
+      // The original :slug template path must NOT exist.
+      expect(fs.existsSync('/test-app/app/notes/[slug].html.md/route.ts')).toBe(false);
+
+      const first = fs.readFileSync('/test-app/app/notes/first-note.html.md/route.ts', 'utf-8');
+      expect(first).toContain('First Note');
+      expect(first).toContain('My first essay');
+      expect(first).toContain('Body of the first note.');
+      expect(first).toContain('https://nicolasfry.com/notes/first-note');
+      // Per-entry content overrides the page template body.
+      expect(first).not.toContain('Template body — ignored');
+    });
+
+    it('should skip dynamic routes (with warning) when no entries are provided', async () => {
+      const routes: RouteInfo[] = [
+        {
+          filePath: '/test-app/app/notes/[slug]/page.tsx',
+          urlPath: '/notes/:slug',
+          type: 'page',
+          metadata: { title: 'Note', description: 'A note' },
+          content: 'Template body',
+        },
+        {
+          filePath: '/test-app/app/about/page.tsx',
+          urlPath: '/about',
+          type: 'page',
+          metadata: { title: 'About', description: 'About me' },
+          content: 'About body',
+        },
+      ];
+
+      const options: PluginOptions = {
+        appDir: '/test-app/app',
+        generatePerPageMarkdown: true,
+      };
+
+      const result = await generatePerPageRoutes(routes, options);
+
+      // Only the static /about route is emitted; the dynamic one is skipped.
+      expect(result).toHaveLength(1);
+      expect(fs.existsSync('/test-app/app/about.html.md/route.ts')).toBe(true);
+      expect(fs.existsSync('/test-app/app/notes/[slug].html.md/route.ts')).toBe(false);
+      // And the user is told why.
+      expect(consoleWarn).toHaveBeenCalled();
+      const warnMsg = consoleWarn.mock.calls.map((c) => String(c[0])).join(' ');
+      expect(warnMsg).toMatch(/notes\/\[slug\]/);
+      expect(warnMsg).toMatch(/dynamicRoutes/);
+    });
+
+    it('should leave entries without explicit overrides falling back to the page metadata', async () => {
+      const routes: RouteInfo[] = [
+        {
+          filePath: '/test-app/app/notes/[slug]/page.tsx',
+          urlPath: '/notes/:slug',
+          type: 'page',
+          metadata: { title: 'Note (template)', description: 'Default description' },
+          content: 'Default content body',
+        },
+      ];
+
+      const options: PluginOptions = {
+        appDir: '/test-app/app',
+        generatePerPageMarkdown: true,
+        dynamicRoutes: {
+          'notes/[slug]': [{ params: { slug: 'fallback-note' } }],
+        },
+      };
+
+      await generatePerPageRoutes(routes, options);
+
+      const out = fs.readFileSync(
+        '/test-app/app/notes/fallback-note.html.md/route.ts',
+        'utf-8',
+      );
+      expect(out).toContain('Note (template)');
+      expect(out).toContain('Default description');
+      expect(out).toContain('Default content body');
+    });
+
+    it('should handle multi-segment dynamic routes', async () => {
+      const routes: RouteInfo[] = [
+        {
+          filePath: '/test-app/app/[year]/[month]/page.tsx',
+          urlPath: '/:year/:month',
+          type: 'page',
+          metadata: { title: 'Archive', description: 'Monthly archive' },
+        },
+      ];
+
+      const options: PluginOptions = {
+        appDir: '/test-app/app',
+        generatePerPageMarkdown: true,
+        dynamicRoutes: {
+          '[year]/[month]': [
+            { params: { year: '2026', month: '04' } },
+            { params: { year: '2025', month: '11' } },
+          ],
+        },
+      };
+
+      const result = await generatePerPageRoutes(routes, options);
+
+      expect(result).toHaveLength(2);
+      expect(fs.existsSync('/test-app/app/2026/04.html.md/route.ts')).toBe(true);
+      expect(fs.existsSync('/test-app/app/2025/11.html.md/route.ts')).toBe(true);
     });
   });
 });

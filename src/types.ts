@@ -133,9 +133,62 @@ export interface PluginOptions {
   customFiles?: CustomLLMFile[];
 
   /**
+   * Expand dynamic routes (`[param]` segments) into one literal route per
+   * entry. Without this, a page at `app/notes/[slug]/page.tsx` would either
+   * be skipped (with a warning) or, in older versions, generate a single
+   * useless `:slug` template. Provide entries here to mirror what your
+   * `generateStaticParams` would return.
+   *
+   * Key is the route path with `[param]` placeholders, relative to `appDir`,
+   * e.g. `'notes/[slug]'` matches `app/notes/[slug]/page.tsx`.
+   *
+   * @example
+   * dynamicRoutes: {
+   *   'notes/[slug]': notes.map((n) => ({
+   *     params: { slug: n.slug },
+   *     title: n.title,
+   *     description: n.blurb,
+   *     content: readFileSync(`content/notes/${n.slug}.md`, 'utf8'),
+   *   })),
+   * }
+   */
+  dynamicRoutes?: Record<string, DynamicRouteEntry[]>;
+
+  /**
    * Callback when files are generated
    */
   onGenerate?: (files: GeneratedFile[]) => void;
+}
+
+/**
+ * Single entry expanded for a dynamic route.
+ *
+ * @example
+ * { params: { slug: 'first-note' }, title: 'First Note', content: '...' }
+ */
+export interface DynamicRouteEntry {
+  /**
+   * Values for the dynamic segment params, e.g. `{ slug: 'first-note' }`.
+   * Must include every `[param]` in the matching route.
+   */
+  params: Record<string, string>;
+
+  /**
+   * Override the page's title for this entry.
+   * Falls back to the page's metadata title if omitted.
+   */
+  title?: string;
+
+  /**
+   * Override the page's description for this entry.
+   */
+  description?: string;
+
+  /**
+   * Markdown body for this entry. Replaces the extracted page content.
+   * Provide this when the page is a template that renders per-slug data.
+   */
+  content?: string;
 }
 
 /**

@@ -6,8 +6,100 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { minimatch } from 'minimatch';
-import type { RouteInfo, PluginOptions, GeneratedFile } from './types';
+import type {
+  RouteInfo,
+  PluginOptions,
+  GeneratedFile,
+  DynamicRouteEntry,
+} from './types';
 import { getBestTitle, getBestDescription } from './metadata-extractor';
+
+/**
+ * Detect whether a route's file path contains any dynamic [param] segments.
+ */
+function isDynamicRoute(route: RouteInfo): boolean {
+  return /\[[^\]]+\]/.test(route.filePath);
+}
+
+/**
+ * Build the route key the user would supply in `dynamicRoutes` (e.g.
+ * `notes/[slug]`) from a route's file path, by stripping `appDir` and the
+ * trailing `/page.tsx`.
+ */
+function dynamicRouteKey(route: RouteInfo, appDir: string): string {
+  const dir = path.dirname(route.filePath);
+  const rel = path.relative(appDir, dir).split(path.sep).join('/');
+  return rel;
+}
+
+/**
+ * Substitute [param] segments with the entry's param values. The trailing
+ * segment becomes the literal `<value>.html.md` filename, mirroring the
+ * "one literal directory per slug" pattern (so static export works without
+ * needing generateStaticParams on the .html.md route).
+ */
+function expandDynamicRoutePath(
+  routeFilePath: string,
+  appDir: string,
+  params: Record<string, string>,
+): string {
+  // /app/notes/[slug]/page.tsx → /app/notes/<slug>.html.md/route.ts
+  const dir = path.dirname(routeFilePath);
+  const rel = path.relative(appDir, dir);
+  const segments = rel.split(path.sep);
+
+  const substituted = segments.map((seg) =>
+    seg.replace(/\[([^\]]+)\]/g, (_, name: string) => {
+      if (params[name] === undefined) {
+        throw new Error(
+          `Missing param "${name}" for dynamic route ${rel}. ` +
+            `Provide it in dynamicRoutes['${rel.split(path.sep).join('/')}'][i].params.`,
+        );
+      }
+      return params[name];
+    }),
+  );
+
+  // The last segment becomes <value>.html.md/
+  const last = substituted.pop();
+  const parent = substituted.length > 0 ? path.join(appDir, ...substituted) : appDir;
+  return path.join(parent, `${last}.html.md`, 'route.ts');
+}
+
+/**
+ * Build the URL path for a dynamic-route entry by substituting `:param` /
+ * `[param]` segments in the page's urlPath with the entry's values.
+ */
+function expandUrlPath(urlPath: string, params: Record<string, string>): string {
+  let out = urlPath;
+  for (const [name, value] of Object.entries(params)) {
+    out = out.replace(new RegExp(`:${name}\\b`, 'g'), value);
+    out = out.replace(new RegExp(`\\[${name}\\]`, 'g'), value);
+  }
+  return out;
+}
+
+/**
+ * Build a synthetic RouteInfo for a single dynamic-route entry. Inherits
+ * from the template route, applies entry overrides on top.
+ */
+function expandDynamicRoute(
+  template: RouteInfo,
+  entry: DynamicRouteEntry,
+): RouteInfo {
+  return {
+    ...template,
+    urlPath: expandUrlPath(template.urlPath, entry.params),
+    metadata: {
+      ...template.metadata,
+      ...(entry.title !== undefined ? { title: entry.title } : {}),
+      ...(entry.description !== undefined
+        ? { description: entry.description }
+        : {}),
+    },
+    content: entry.content !== undefined ? entry.content : template.content,
+  };
+}
 
 /**
  * Generate per-page markdown route handlers for all routes
@@ -28,20 +120,52 @@ export async function generatePerPageRoutes(
   // Filter routes based on include/exclude patterns
   const filteredRoutes = filterRoutes(routes, options);
 
+  const dynamicRoutes = options.dynamicRoutes || {};
+
   for (const route of filteredRoutes) {
     try {
-      // Generate markdown content
+      if (isDynamicRoute(route)) {
+        const key = dynamicRouteKey(route, appDir);
+        const entries = dynamicRoutes[key];
+
+        if (!entries || entries.length === 0) {
+          console.warn(
+            `[next-plugin-llms] Skipping dynamic route "${key}": ` +
+              `no entries provided. Add dynamicRoutes['${key}'] in your ` +
+              `plugin options to expand it into per-entry .html.md routes.`,
+          );
+          continue;
+        }
+
+        for (const entry of entries) {
+          const expandedRoute = expandDynamicRoute(route, entry);
+          const markdownContent = createMarkdownContent(expandedRoute, options);
+          const routeHandlerCode = createRouteHandlerContent(markdownContent);
+          const routeHandlerPath = expandDynamicRoutePath(
+            route.filePath,
+            appDir,
+            entry.params,
+          );
+
+          fs.mkdirSync(path.dirname(routeHandlerPath), { recursive: true });
+          fs.writeFileSync(routeHandlerPath, routeHandlerCode, 'utf-8');
+
+          generatedFiles.push({
+            path: routeHandlerPath,
+            type: 'per-page',
+            size: Buffer.byteLength(routeHandlerCode, 'utf-8'),
+            routeCount: 1,
+          });
+        }
+        continue;
+      }
+
+      // Static route: original codepath unchanged.
       const markdownContent = createMarkdownContent(route, options);
-
-      // Generate route handler code
       const routeHandlerCode = createRouteHandlerContent(markdownContent);
-
-      // Determine output path
       const routeHandlerPath = getRouteHandlerPath(route, appDir);
 
-      // Write route handler file
-      const routeDir = path.dirname(routeHandlerPath);
-      fs.mkdirSync(routeDir, { recursive: true });
+      fs.mkdirSync(path.dirname(routeHandlerPath), { recursive: true });
       fs.writeFileSync(routeHandlerPath, routeHandlerCode, 'utf-8');
 
       generatedFiles.push({
