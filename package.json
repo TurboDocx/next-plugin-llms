@@ -5,14 +5,14 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "build": "npm run typecheck && tsc --noCheck",
+    "build": "npm run typecheck && tsc",
     "typecheck": "tsrs --noEmit -p tsconfig.typecheck.json --checkers 4",
     "watch": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "prepare": "tsc --noCheck",
+    "prepare": "tsc",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
