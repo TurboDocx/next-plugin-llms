@@ -23,30 +23,35 @@ export async function extractPageContent(
   return processContent(content, routeInfo.filePath, options);
 }
 
+// Utility classes that are a single plain word, so they can't be told apart by a dash.
+const STANDALONE_UTILITIES = new Set([
+  'flex', 'grid', 'block', 'inline', 'hidden', 'contents', 'container', 'table',
+  'relative', 'absolute', 'fixed', 'sticky', 'static', 'isolate', 'visible', 'invisible',
+  'underline', 'italic', 'uppercase', 'lowercase', 'capitalize', 'truncate', 'antialiased',
+  'border', 'rounded', 'shadow', 'outline', 'ring', 'blur', 'grow', 'shrink',
+  'transition', 'transform', 'group', 'peer', 'prose',
+]);
+
 /**
- * Check if a string looks like CSS classes (Tailwind, etc.)
+ * True when one whitespace-free token looks like a CSS class: lowercase, made of class
+ * characters, and either dashed after any variant prefix (`pt-24`, `md:flex-row`,
+ * `w-[200px]`) or a known one-word utility (`flex`, `md:hidden`).
  */
-function isCSSClassString(str: string): boolean {
-  if (!str || str.trim().length === 0) {
+function isCSSClassToken(token: string): boolean {
+  if (!/^[a-z0-9\-:/[\]#%._!]+$/.test(token) || token.includes('//')) {
     return false;
   }
+  const base = token.replace(/^!/, '').split(':').pop() ?? '';
+  return base.includes('-') || STANDALONE_UTILITIES.has(base);
+}
 
-  // Common CSS class patterns
-  const cssPatterns = [
-    /^[\w-]+(\s+[\w-]+)*$/,  // Multiple space-separated class names
-    /^(text|bg|border|flex|grid|p|m|w|h|gap|space|rounded|shadow|opacity|font|leading|tracking)-/,  // Tailwind prefixes
-    /^(sm:|md:|lg:|xl:|2xl:)/,  // Tailwind breakpoints
-    /^(hover:|focus:|active:|group-hover:)/,  // Tailwind states
-  ];
-
-  // If it contains 3+ space-separated words that look like CSS classes
-  const words = str.trim().split(/\s+/);
-  if (words.length >= 3 && words.every(w => /^[\w-]+$/.test(w))) {
-    return true;
-  }
-
-  // Check against CSS patterns
-  return cssPatterns.some(pattern => pattern.test(str.trim()));
+/**
+ * Check if a string looks like CSS classes (Tailwind, etc.): every word must be a class.
+ * Plain text such as "Amazing Products" or "best in class" is kept.
+ */
+function isCSSClassString(str: string): boolean {
+  const tokens = (str ?? '').trim().split(/\s+/).filter(Boolean);
+  return tokens.length > 0 && tokens.every(isCSSClassToken);
 }
 
 /**
