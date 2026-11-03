@@ -176,6 +176,57 @@ describe('Content Processor', () => {
       expect(content).toContain('Featured Product');
       expect(content).toContain('TurboDocx is amazing');
     });
+
+    describe('CSS class filtering', () => {
+      const routeInfo: RouteInfo = {
+        filePath: '/app/products/page.tsx',
+        urlPath: '/products',
+        type: 'page'
+      };
+
+      it('drops class strings held outside className attributes', async () => {
+        vol.fromJSON({
+          '/app/products/page.tsx': `
+            const hero = "pt-24 pb-20 gradient-bg";
+            const row = 'flex items-center justify-between gap-4';
+            const responsive = "hidden md:block hover:bg-blue-500 w-1/2 w-[200px]";
+            const single = "container";
+            const heading = \`text-lg font-bold \${hero}\`;
+            export default function Products() {
+              return <div className={cn(hero, row, responsive, single)}>Real copy</div>;
+            }
+          `,
+        });
+
+        const content = await extractPageContent(routeInfo);
+
+        expect(content).toContain('Real copy');
+        for (const cls of ['pt-24', 'items-center', 'md:block', 'w-[200px]', 'container', 'font-bold']) {
+          expect(content).not.toContain(cls);
+        }
+      });
+
+      it('keeps plain text, single words and lowercase phrases', async () => {
+        vol.fromJSON({
+          '/app/products/page.tsx': `
+            export const metadata = { title: 'Pricing' };
+            const tagline = "best in class";
+            const year = "2026";
+            const link = "https://turbodocx.com/pricing";
+            export default function Products() {
+              return <div>{tagline}</div>;
+            }
+          `,
+        });
+
+        const content = await extractPageContent(routeInfo);
+
+        expect(content).toContain('Pricing');
+        expect(content).toContain('best in class');
+        expect(content).toContain('2026');
+        expect(content).toContain('https://turbodocx.com/pricing');
+      });
+    });
   });
 
   describe('extractHeadings', () => {
